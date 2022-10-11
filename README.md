@@ -28,6 +28,8 @@ The left-side button (pin P1.1) has been configurated to enter and exit `EMERGEN
 ## FINITE STATE MACHINE DESIGN
 A brief overview of the FSM design will be now provided.
 
+![fsm_design](img/fsm_design.png)
+
 ### INIT STATE
 At the beginning of the execution, the system enters `INIT` state. A configuration routine has been provided to initialize all parameters and modules needed by the system.
 Once everything is set up, the system enters `RUNNING` mode.
