@@ -1,8 +1,7 @@
 /*
  * fsm.c
  */
-#include "_libraries/fsm.h"
-#include "_libraries/constants.h"
+#include "_libraries/config_init.h"
 #include "driverlib/MSP432P4xx/driverlib.h"
 
 const Timer_A_UpModeConfig upModeConf200 = {
@@ -24,7 +23,7 @@ const Timer_A_UpModeConfig upModeConf350 = {
 };
 
 
-void sfm_init(){
+void system_init(){
     /*
      * configure LEDs
      * configure ADC for sensor sampling
@@ -100,34 +99,6 @@ void sfm_init(){
     ADC14_toggleConversionTrigger();
     Timer_A_startCounter(TIMER_A0_BASE, TIMER_A_UP_MODE);
     Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
-
-}
-void sfm_running(){
-    /*
-     * attiva tutti gli interrupt
-     * riattiva sampling
-     */
-//    printf("CS: %d\n", current_state);
-//    //printf("Value SENSOR: %.2f\n\n", sensor_voltage);
-//    printf("Value SYSTEM VOLTAGE: %.2f\n\n", system_voltage);
-//    printf("Check danger\n");
-//    if (system_voltage > OVERVOLTAGE)
-//    {
-//        GPIO_setOutputHighOnPin(LED, RED);
-//        current_state = DANGER;
-//    } else if(system_voltage < UNDERVOLTAGE){
-//        GPIO_setOutputHighOnPin(LED, BLUE);
-//        current_state = DANGER;
-//    }
-
-}
-void sfm_danger(){
-
-}
-void sfm_emergency(){
-    /*
-     * stampa la scritta di emergenza e fa busy waiting
-     */
 
 }
 
