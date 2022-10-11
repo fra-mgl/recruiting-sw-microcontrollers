@@ -48,6 +48,10 @@ void main(void)
  */
 
 void PORT1_IRQHandler(void){
+    /*
+     * gestisce il bottone per l'ingresso e l'uscita
+     * dallo stato EMERGENCY
+     */
     if(current_state != EMERGENCY){
          /* sto entrando in stato EMERGENCY -> disattivo tutti gli interrupts e ADC */
         printf("interrupt DISABLED\n");
