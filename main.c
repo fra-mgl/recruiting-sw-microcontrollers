@@ -14,7 +14,7 @@ State_t current_state;
 Danger_t danger_status;
 
 float system_voltage;
-float sensor_voltage;
+float sensor_value_lux;
 
 
 void main(void)
@@ -24,6 +24,7 @@ void main(void)
     system_init();
     int bw = 0;
     system_voltage = 0;
+    sensor_value_lux = 0;
     current_state = RUNNING;
     danger_status = NONE;
     while(1){
@@ -34,9 +35,8 @@ void main(void)
             __sleep();
         }
         /*
-         * Quando viene eseguito l'handler di un interrupt, il programma
-         * riprende l'esecuzione da qui, viene eseguito un nuovo ciclo del loop
-         * e se non ci si trova in stato di EMERGENCY, si ritorna in __sleep()
+         * when an interrupt handler in terminated, the while-loop is executed from the
+         * beginning and the status is checked
          */
     }
 
@@ -44,33 +44,28 @@ void main(void)
 
 /*
  * INTERRUPT HANDLERS
- * Vengono gestiti nel file main.c per comodità e semplicità
+ * for the sake of simplicity, handler functions are imlemented here
  */
 
 void PORT1_IRQHandler(void){
     /*
-     * gestisce il bottone per l'ingresso e l'uscita
-     * dallo stato EMERGENCY
+     * this interrupt handler manages the emergency status
      */
     if(current_state != EMERGENCY){
-         /* sto entrando in stato EMERGENCY -> disattivo tutti gli interrupts e ADC */
-        printf("interrupt DISABLED\n");
+         /* entering EMERGENCY state -> all handlers are disabled */
         Interrupt_disableInterrupt(INT_TA0_N);
         Interrupt_disableInterrupt(INT_TA1_N);
         Interrupt_disableInterrupt(INT_ADC14);
-        //ADC14_disableConversion();
         current_state = EMERGENCY;
     } else{
-        /* sto uscendo da stato EMERGENCY -> riattivo interrupt e ADC */
-        printf("interrupt ENABLED\n");
+        /* exiting EMERGENCY state -> all handlers are enabled */
         Interrupt_enableInterrupt(INT_TA0_N);
         Interrupt_enableInterrupt(INT_TA1_N);
         Interrupt_enableInterrupt(INT_ADC14);
-        //ADC14_enableConversion();
         /*
-         * all'uscita da EMERGENCY, viene imposto il passaggio per lo stato di RUNNING,
-         * per poter aggiornare lo stato nel modo corretto nel caso in cui la tensione
-         * fosse cambiata mentre il sistema era in EMERGENCY
+         * when exiting, the status is set to RUNNING to catch variations
+         * (which the system cannot check when in this status) and to update the system
+         * as a consequence
          */
         if(danger_status != NONE){
             GPIO_setOutputLowOnPin(LED, RED);
@@ -78,8 +73,8 @@ void PORT1_IRQHandler(void){
         }
         current_state = RUNNING;
 //        /*
-//         * Questa procedura permette il ripristino dello stato precendente alla chiamata di EMERGENCY
-//         * quindi si assume che il system voltage non cambi mentre si è in stato EMERGENCY.
+//         * With this implementation, the status in which the system was before the emergency is restored
+//         * (in this case, it is assumed that the system cannot change during EMERGENCY status)
 //         */
 //        if(danger_status == NONE){
 //            /*
@@ -103,10 +98,9 @@ void PORT1_IRQHandler(void){
 void ADC14_IRQHandler(void)
 {
     /*
-     * handler dedicato ad ADC
-     * semplicemente notifica la fine di un ciclo di conversione
-     * la lettura viene eseguita dall'appostito handler del timer
-     * che ne scandisce il timing
+     * handler related to ADC
+     * when a single conversion in completed, the relative
+     * interrupt is triggered
      */
     uint64_t status;
     status = ADC14_getEnabledInterruptStatus();
@@ -117,10 +111,9 @@ void ADC14_IRQHandler(void)
 void TA0_N_IRQHandler(void)
 {
     /*
-     * Handler dedicato alla lettura e al controllo di
-     * SYSTEM_VOLTAGE sul pin P5.4
-     * in questo contesto viene anche eseguito il controllo
-     * e la modifica di stato del sistema
+     * handler related to SYSTEM_VOLTAGE checks
+     * result of the conversion is stored, then it is evaluated to
+     * set the system status properly
      */
     uint16_t curADCResult;
     curADCResult = ADC14_getResult(ADC_MEM0);
@@ -129,8 +122,7 @@ void TA0_N_IRQHandler(void)
     switch(current_state){
         case DANGER:
             /*
-             * se soddisfatte le condizioni, usciamo dallo stato DANGER
-             * e ripristiniamo lo stato di RUNNING
+             * if conditions are satisfied, the RUNNING state is set
              */
             if ((danger_status == OVERVOLTAGE)&&(system_voltage <= OVERVOLTAGE_VALUE))
             {
@@ -146,8 +138,8 @@ void TA0_N_IRQHandler(void)
             break;
         default:
             /*
-             * se soddisfatte le condizioni, entriamo nello stato DANGER
-             * e impostiamo il relativo parametro
+             * if conditions are satisfied, the RUNNING state is set
+             * the associated parameters (danger_status) is also set
              */
             if (system_voltage > OVERVOLTAGE_VALUE)
             {
@@ -168,12 +160,18 @@ void TA0_N_IRQHandler(void)
 void TA1_N_IRQHandler(void)
 {
     /*
-     * Handler dedicato alla lettura del sensore associato
-     * al pin P5.4
+     * handler related to SYSTEM_VOLTAGE checks
+     * conversion voltage - resistance - luminosity is also performed
      */
     uint16_t curADCResult;
+    float sensor_voltage; //voltage provided by ADC
+    float res; //conversion voltage to resistance
     curADCResult = ADC14_getResult(ADC_MEM1);
-    sensor_voltage = (curADCResult * 3.3) / 16384; //2^14
-    printf("Value PHOTORESISTOR: %.2f\n", sensor_voltage);
+    sensor_voltage = (curADCResult * VOLTAGE_ANALOG_REF) / 16384; //2^14
+    //printf("Value PHOTORESISTOR: %.2f\n", sensor_voltage);
+    res = (RESISTOR * sensor_voltage) / (VOLTAGE_ANALOG_REF - sensor_voltage);
+    //sensor_value_lux = 500/(res/1000);
+    sensor_value_lux = 500000/res; //resistance voltage to luminosity
+    printf("Value PHOTORESISTOR in LUMEX: %.2f\n", sensor_value_lux);
     Timer_A_clearInterruptFlag(TIMER_A1_BASE);
 }

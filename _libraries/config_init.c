@@ -1,8 +1,12 @@
 /*
- * fsm.c
+ * config_init.c
  */
 #include "_libraries/config_init.h"
 #include "driverlib/MSP432P4xx/driverlib.h"
+
+/*
+ * Timers parameters
+ */
 
 const Timer_A_UpModeConfig upModeConf200 = {
     TIMER_A_CLOCKSOURCE_SMCLK,
@@ -41,7 +45,7 @@ void system_init(){
     GPIO_setOutputLowOnPin(LED, RED);
     GPIO_setOutputLowOnPin(LED, BLUE);
 
-    // sensors - just for now a switch to change status
+    // sensors
     GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN1);
     GPIO_interruptEdgeSelect(GPIO_PORT_P1, GPIO_PIN1, GPIO_HIGH_TO_LOW_TRANSITION);
     GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN1);
@@ -54,8 +58,6 @@ void system_init(){
     /*
      * ADC configuration
      */
-    /* Setting Flash wait state */
-
     ADC14_enableModule();
     ADC14_initModule(ADC_CLOCKSOURCE_MCLK, ADC_PREDIVIDER_1, ADC_DIVIDER_1, 0);
     // configuring memory and input pin
