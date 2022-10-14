@@ -10,8 +10,9 @@
 
 const Timer_A_UpModeConfig upModeConf200 = {
     TIMER_A_CLOCKSOURCE_SMCLK,
-    TIMER_A_CLOCKSOURCE_DIVIDER_48,
-    50000, // 3*10^6 * 200 *10^-3 / 10
+    TIMER_A_CLOCKSOURCE_DIVIDER_32,
+    //50000, // 3*10^6 * 200 *10^-3 / 10 con 12mhz
+    37500,
     TIMER_A_TAIE_INTERRUPT_ENABLE,
     TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE,
     TIMER_A_DO_CLEAR
@@ -19,8 +20,9 @@ const Timer_A_UpModeConfig upModeConf200 = {
 
 const Timer_A_UpModeConfig upModeConf350 = {
     TIMER_A_CLOCKSOURCE_SMCLK,
-    TIMER_A_CLOCKSOURCE_DIVIDER_64,
-    65535, //3*10^6 * 350 *10^-3 / 5  20 -> 52.500
+    TIMER_A_CLOCKSOURCE_DIVIDER_40,
+    //65535, //3*10^6 * 350 *10^-3 / 5  20 -> 52.500 con 12mhk
+    52500,
     TIMER_A_TAIE_INTERRUPT_ENABLE,
     TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE,
     TIMER_A_DO_CLEAR
@@ -38,8 +40,8 @@ const Timer_A_UpModeConfig upModeConf350 = {
 const eUSCI_UART_Config uartConfig =
 {
         EUSCI_A_UART_CLOCKSOURCE_SMCLK,          // SMCLK Clock Source
-        78,                                     // BRDIV = 78
-        2,                                       // UCxBRF = 2
+        39,                                     // BRDIV = 78
+        1,                                       // UCxBRF = 2
         0,                                       // UCxBRS = 0
         EUSCI_A_UART_NO_PARITY,                  // No Parity
         EUSCI_A_UART_LSB_FIRST,                  // LSB First
@@ -61,7 +63,7 @@ void system_init(){
      * Setting DCO to 12MHz
      * This modifies MCLK and SMCLK frequency and set it to 12MHz
      */
-    CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_12);
+    CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_6);
 
     /* Configuring UART Module */
     UART_initModule(EUSCI_A0_BASE, &uartConfig);
@@ -125,7 +127,7 @@ void system_init(){
 
 
     SysTick_enableModule();
-    SysTick_setPeriod(12000000);
+    SysTick_setPeriod(FREQ);
 //    SysTick_enableInterrupt();
 
 

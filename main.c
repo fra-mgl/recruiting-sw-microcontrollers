@@ -52,7 +52,7 @@ void main(void)
         //printf("%d sec\n",time);
         if(current_state == EMERGENCY){
             //printf("Board in waiting state - please press the emergency button\n");
-            for(bw = 0; bw < 0xFFFFF; bw++); // implementato con busy waiting
+            for(bw = 0; bw < 0x5FFFF; bw++); // implementato con busy waiting
             serial_print("Board in waiting state - please press the emergency button");
         }else{
             __sleep();
@@ -60,8 +60,6 @@ void main(void)
             // print status
             char s[MAX_CHAR];
             sprintf(s,"[%f] Value SYSTEM VOLTAGE: %.2f\n\r[%f] Value SENSOR: %.2f", system_voltage.delta_time, system_voltage.value, sensor.delta_time, sensor.value);
-            serial_print(s);
-            sprintf(s, "%d", current_state);
             serial_print(s);
             /*
              * voltage_system is checked only if
@@ -153,7 +151,7 @@ void TA0_N_IRQHandler(void)
     Timer_A_clearInterruptFlag(TIMER_A0_BASE);
     //uint32_t my_time = SysTick_getValue();
     system_voltage.end = SysTick_getValue();
-    system_voltage.delta_time = (system_voltage.start - system_voltage.end) / 12000000.0;
+    system_voltage.delta_time = (system_voltage.start - system_voltage.end) / FREQ_F;
     system_voltage.start = SysTick_getValue();
     //char s[MAX_CHAR];
     uint16_t curADCResult;
@@ -214,7 +212,7 @@ void TA1_N_IRQHandler(void)
      */
     Timer_A_clearInterruptFlag(TIMER_A1_BASE);
     sensor.end = SysTick_getValue();
-    sensor.delta_time = (sensor.start - sensor.end) / 12000000.0;
+    sensor.delta_time = (sensor.start - sensor.end) / FREQ_F;
     sensor.start = SysTick_getValue();
 
 

@@ -18,6 +18,8 @@
 #define VOLTAGE_ANALOG_REF 3.3
 #define RESISTOR 10000 // 10kOhm resistor
 #define MAX_CHAR 70
+#define FREQ 6000000
+#define FREQ_F 6000000.0
 
 typedef enum {INIT, RUNNING, DANGER, EMERGENCY} State_t;
 typedef enum {NONE, OVERVOLTAGE, UNDERVOLTAGE} Danger_t;
