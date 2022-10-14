@@ -17,10 +17,12 @@
 #define UNDERVOLTAGE_VALUE 1.8
 #define VOLTAGE_ANALOG_REF 3.3
 #define RESISTOR 10000 // 10kOhm resistor
+#define MAX_CHAR 70
 
 typedef enum {INIT, RUNNING, DANGER, EMERGENCY} State_t;
 typedef enum {NONE, OVERVOLTAGE, UNDERVOLTAGE} Danger_t;
 
 void system_init();
+void serial_print(char* string_to_print);
 
 #endif /* _CONFIG_INIT_H_ */
