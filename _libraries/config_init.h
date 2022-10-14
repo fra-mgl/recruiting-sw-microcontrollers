@@ -27,4 +27,5 @@ typedef enum {NONE, OVERVOLTAGE, UNDERVOLTAGE} Danger_t;
 void system_init();
 void serial_print(char* string_to_print);
 
+
 #endif /* _CONFIG_INIT_H_ */

@@ -38,8 +38,17 @@ Once everything is set up, the system enters `RUNNING` mode.
 When in `RUNNING` state, the system performs default tasks, such as:
 * reading from the analog sensor and calculating the environment luminosity every 200ms. For this purpose, `TIMER_A0` is set up.
 * check the `system_voltage` every 350ms and change the state if needed. For this purpose, `TIMER_A1` is set up.
-Both timers have a clock source at a frequency of 3MHz (`TIMER_A_CLOCKSOURCE_SMCLK`).
+
+Both timers have a clock source at a frequency of 6MHz (`TIMER_A_CLOCKSOURCE_SMCLK`).
+
 It's always possible to activate `EMERGENCY` mode using the corresponding button.
+
+Only computation is performed inside the handlers to make them as fast as possible. Instead, the logging is performed in the main function using `serial_print()`, which implements the UART module.
+In the logs, there are:
+* in square brackets `[]`, the time in seconds between interrupts (`delta_time`). To compute it, the SysTick module has been used.
+* the value of the sensor
+
+Please, note that some `delta_time` values (greater than 1) should not be considered (to compute the time, we do not have considered all that cases in which the SysTick register is reset).
 
 ### DANGER STATE
 Activating this state means that a voltage malfunction has been detected.
@@ -47,17 +56,16 @@ As specified above, in case of `overvoltage`, the red LED will turn on; otherwis
 
 When the `system_voltage` is back to normal, the LEDs are turned off and the system gets back to `RUNNING` state.
 
-All this tasks are performed inside the handler of the corresponding timer (`TA0_N_IRQHandler` and `TA1_N_IRQHandler`).
+All this tasks are performed in the `main` function whether the state is not set to `EMERGENCY`. On the contrary, the `system_voltage` value is read every 350ms (`TA0_N_IRQHandler`).
 
 It's still possible to enter `EMERGENCY` mode from this state.
 
 ### EMERGENCY STATE
 When pushing the button, the system enters this mode.
-All timers' (`INT_TA0_N` e `INT_TA1_N`) and ADC's (`INT_ADC14`) interrupts are disabled. 
-Every 500 ms, an alert will be prompted on the console to report to the user that the system is in `EMERGENCY` mode (implemented using busy waiting).
+All timers' (`INT_TA0_N` and `INT_TA1_N`) interrupts are disabled. 
+Every 500 ms, an alert will be prompted on the terminal to report to the user that the system is in `EMERGENCY` mode (implemented using busy waiting).
 
 When the button is pushed for the second time, the current status is switched to `RUNNING`, and this happens independently of the status of the system before entering `EMERGENCY` mode. This implementation has been chosen to ensure all the values are updated after exiting this mode.
-The commented section of the code defines another way of implementing this, in which the previous status of the system is restored.
 
 ## Additional notes
 All functions in the code are commented. Check the source files for more details.

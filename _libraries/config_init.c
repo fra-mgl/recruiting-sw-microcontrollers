@@ -11,8 +11,7 @@
 const Timer_A_UpModeConfig upModeConf200 = {
     TIMER_A_CLOCKSOURCE_SMCLK,
     TIMER_A_CLOCKSOURCE_DIVIDER_32,
-    //50000, // 3*10^6 * 200 *10^-3 / 10 con 12mhz
-    37500,
+    37500, // 6*10^6 * 200 *10^-3 / 32
     TIMER_A_TAIE_INTERRUPT_ENABLE,
     TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE,
     TIMER_A_DO_CLEAR
@@ -21,33 +20,29 @@ const Timer_A_UpModeConfig upModeConf200 = {
 const Timer_A_UpModeConfig upModeConf350 = {
     TIMER_A_CLOCKSOURCE_SMCLK,
     TIMER_A_CLOCKSOURCE_DIVIDER_40,
-    //65535, //3*10^6 * 350 *10^-3 / 5  20 -> 52.500 con 12mhk
-    52500,
+    52500, // 6*10^6 * 350 *10^-3 / 40
     TIMER_A_TAIE_INTERRUPT_ENABLE,
     TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE,
     TIMER_A_DO_CLEAR
 };
 
-//const Timer_A_UpModeConfig upModeConf1 = {
-//    TIMER_A_CLOCKSOURCE_SMCLK,
-//    TIMER_A_CLOCKSOURCE_DIVIDER_48,
-//    62500, //3*10^6 * 350 *10^-3 / 5  20 -> 52.500
-//    TIMER_A_TAIE_INTERRUPT_ENABLE,
-//    TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE,
-//    TIMER_A_DO_CLEAR
-//};
+/*
+ * UART parameters
+ * to calculate all parameters, this is the reference
+ * https://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSP430BaudRateConverter/index.html
+ */
 
 const eUSCI_UART_Config uartConfig =
 {
-        EUSCI_A_UART_CLOCKSOURCE_SMCLK,          // SMCLK Clock Source
-        39,                                     // BRDIV = 78
-        1,                                       // UCxBRF = 2
-        0,                                       // UCxBRS = 0
-        EUSCI_A_UART_NO_PARITY,                  // No Parity
-        EUSCI_A_UART_LSB_FIRST,                  // LSB First
-        EUSCI_A_UART_ONE_STOP_BIT,               // One stop bit
-        EUSCI_A_UART_MODE,                       // UART mode
-        EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION  // Oversampling
+    EUSCI_A_UART_CLOCKSOURCE_SMCLK,          // SMCLK Clock Source
+    39,
+    1,
+    0,
+    EUSCI_A_UART_NO_PARITY,                  // No Parity
+    EUSCI_A_UART_LSB_FIRST,                  // LSB First
+    EUSCI_A_UART_ONE_STOP_BIT,               // One stop bit
+    EUSCI_A_UART_MODE,                       // UART mode
+    EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION  // Oversampling
 };
 
 
@@ -56,12 +51,13 @@ void system_init(){
     /*
      * Activating UART Serial communication
      */
+
     /* Selecting P1.2 and P1.3 in UART mode */
     GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P1, GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
 
     /*
-     * Setting DCO to 12MHz
-     * This modifies MCLK and SMCLK frequency and set it to 12MHz
+     * Setting DCO to 6MHz
+     * This modifies MCLK and SMCLK frequency and set it to 6MHz
      */
     CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_6);
 
@@ -114,8 +110,6 @@ void system_init(){
     // Configuring the sample/hold time for TBD
     ADC14_setSampleHoldTime(ADC_PULSE_WIDTH_192,ADC_PULSE_WIDTH_192);
     ADC14_enableSampleTimer(ADC_AUTOMATIC_ITERATION);
-    ADC14_enableInterrupt(ADC_INT0);
-    ADC14_enableInterrupt(ADC_INT1);
 
     /*
      * Timers configuration
@@ -128,27 +122,21 @@ void system_init(){
 
     SysTick_enableModule();
     SysTick_setPeriod(FREQ);
-//    SysTick_enableInterrupt();
 
 
     Timer_A_configureUpMode(TIMER_A0_BASE, &upModeConf350); // for system voltage
     Timer_A_configureUpMode(TIMER_A1_BASE, &upModeConf200); // for sensor
-    //Timer_A_configureUpMode(TIMER_A2_BASE, &upModeConf1); // for timing
 
     /*
      * Starting...
      */
 
     //Enabling interrupts and going to sleep
-    //Interrupt_enableSleepOnIsrExit();
-//    Interrupt_enableInterrupt(INT_ADC14);
     Interrupt_enableInterrupt(INT_TA0_N);
     Interrupt_enableInterrupt(INT_TA1_N);
-   // Interrupt_enableInterrupt(INT_TA2_N);
 
     Timer_A_clearInterruptFlag(TIMER_A0_BASE);
     Timer_A_clearInterruptFlag(TIMER_A1_BASE);
-    //Timer_A_clearInterruptFlag(TIMER_A2_BASE);
     // Enabling MASTER interrupts
     Interrupt_enableMaster();
 
@@ -157,22 +145,22 @@ void system_init(){
     ADC14_toggleConversionTrigger();
     Timer_A_startCounter(TIMER_A0_BASE, TIMER_A_UP_MODE);
     Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
-    //Timer_A_startCounter(TIMER_A2_BASE, TIMER_A_UP_MODE);
-
 }
 
 void serial_print(char* string_to_print){
     int i = 0;
     uint8_t c;
-        i = 0;
+    i = 0;
+    c = string_to_print[i];
+    while(c != '\0'){
+        UART_transmitData(EUSCI_A0_BASE, c);
+        ++i;
         c = string_to_print[i];
-        while(c != '\0'){
-            MAP_UART_transmitData(EUSCI_A0_BASE, c);
-            ++i;
-            c = string_to_print[i];
-        }
-        MAP_UART_transmitData(EUSCI_A0_BASE, '\n');
-        MAP_UART_transmitData(EUSCI_A0_BASE, '\r');
+    }
+    UART_transmitData(EUSCI_A0_BASE, '\n');
+    UART_transmitData(EUSCI_A0_BASE, '\r');
 
 }
+
+
 
